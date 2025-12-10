@@ -31,7 +31,12 @@ function setupCanvas() {
 }
 
 async function setupModelSession() {
-    return ort.InferenceSession.create('./model.onnx');
+        try {
+        return await ort.InferenceSession.create('./model.onnx')
+    } catch (e) {
+        console.error('Erreur chargement modèle:', e)
+        predictionEl.textContent = 'Erreur'
+    }
 }
 
 function setupEventListeners() {
@@ -39,7 +44,6 @@ function setupEventListeners() {
     canvas.addEventListener('mousemove', draw)
     canvas.addEventListener('mouseup', stopDrawing)
     canvas.addEventListener('mouseout', stopDrawing)
-    canvas.addEventListener('touchend', stopDrawing)
     clearBtn.addEventListener('click', clearCanvas)
     predictBtn.addEventListener('click', predict)
 }
@@ -83,10 +87,6 @@ function getPosition(e) {
         (e.clientX - rect.left) * scaleX,
         (e.clientY - rect.top) * scaleY
     ]
-}
-
-function getImageData() {
-    return ctx.getImageData(0, 0, canvas.width, canvas.height)
 }
 
 function resizeImage() {
