@@ -8,12 +8,14 @@ const confidenceEl = document.getElementById('confidence')
 const probabilitiesEl = document.getElementById('probabilities')
 
 // Vars
+let session = null
 let isDrawing = false
 let lastX = 0
 let lastY = 0
 
 // Init & setup
-function init() {
+async function init() {
+    session = await setupModelSession()
     setupCanvas()
     setupEventListeners()
     renderProbabilities(new Array(10).fill(0))
@@ -26,6 +28,10 @@ function setupCanvas() {
     ctx.lineWidth = 5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
+}
+
+async function setupModelSession() {
+    return ort.InferenceSession.create('./model.onnx');
 }
 
 function setupEventListeners() {
@@ -79,6 +85,26 @@ function getPosition(e) {
     ]
 }
 
+function getImageData() {
+    return ctx.getImageData(0, 0, canvas.width, canvas.height)
+}
+
+function resizeImage() {
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = 28
+    tempCanvas.height = 28
+    const tempCtx = tempCanvas.getContext('2d')
+    tempCtx.drawImage(canvas, 0, 0, 28, 28)
+    return tempCtx.getImageData(0, 0, 28, 28)
+}
+
+function softMax(arr) {
+    const max = Math.max(...arr)
+    const exps = arr.map(l => Math.exp(l - max))
+    const sum = exps.reduce((a, b) => a + b)
+    return exps.map(e => e / sum)
+}
+
 // Clear canvas
 function clearCanvas() {
     ctx.fillStyle = '#000'
@@ -88,13 +114,26 @@ function clearCanvas() {
     renderProbabilities(new Array(10).fill(0))
 }
 
-// Placeholder pour la prediction (a implementer)
-function predict() {
-    // TODO: Ajouter la logique d'inference ONNX ici
-    console.log('Prediction demandee')
+// Number prediction
+async function predict() {
+    const imageData = resizeImage()
+    const tensor = new ort.Tensor(
+        'float32',
+        Float32Array.from({ length: 784 }, (_, i) => imageData.data[i * 4] / 255),
+        [1, 1, 28, 28]
+    )
+    const results = await session.run({ x: tensor })
+    const logits = [...results.linear_2.data].map(n => Number(n))
+    const probs = softMax(logits)
+    const predicted = probs.indexOf(Math.max(...probs))
+    const confidence = Math.max(...probs)
+
+    predictionEl.textContent = predicted.toString()
+    confidenceEl.textContent = `${(confidence * 100).toFixed(1)}%`
+    renderProbabilities(probs)
 }
 
-// Afficher les probabilites pour chaque chiffre
+// Probabilities
 function renderProbabilities(probs) {
     const maxIndex = probs.indexOf(Math.max(...probs))
 
@@ -107,4 +146,4 @@ function renderProbabilities(probs) {
 }
 
 // Launch init
-init()
+init().then(() => console.log("Initialisation successfully ended."))
