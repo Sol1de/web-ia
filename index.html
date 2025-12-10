@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnaissance de Chiffres</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Reconnaissance de Chiffres</h1>
+        <p class="subtitle">Dessinez un chiffre (0-9) dans le canvas</p>
+
+        <div class="canvas-container">
+            <canvas id="drawingCanvas" width="280" height="280"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="clearBtn">Effacer</button>
+            <button id="predictBtn">Prédire</button>
+        </div>
+
+        <div class="result-container">
+            <h2>Résultat</h2>
+            <div id="prediction" class="prediction">-</div>
+            <div id="confidence" class="confidence"></div>
+        </div>
+
+        <div id="probabilities" class="probabilities"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
