@@ -16,6 +16,7 @@ let lastY = 0
 // Init & setup
 async function init() {
     session = await setupModelSession()
+    console.log("output: " + session.outputNames)
     setupCanvas()
     setupEventListeners()
     renderProbabilities(new Array(10).fill(0))
@@ -117,13 +118,15 @@ function clearCanvas() {
 // Number prediction
 async function predict() {
     const imageData = resizeImage()
+    const mean = 0.1307
+    const std = 0.3081
     const tensor = new ort.Tensor(
         'float32',
-        Float32Array.from({ length: 784 }, (_, i) => imageData.data[i * 4] / 255),
+        Float32Array.from({ length: 784 }, (_, i) => (imageData.data[i * 4] / 255 - mean) / std),
         [1, 1, 28, 28]
     )
     const results = await session.run({ x: tensor })
-    const logits = [...results.linear_2.data].map(n => Number(n))
+    const logits = [...results.linear_1.data].map(n => Number(n))
     const probs = softMax(logits)
     const predicted = probs.indexOf(Math.max(...probs))
     const confidence = Math.max(...probs)
